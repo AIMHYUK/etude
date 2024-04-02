@@ -11,6 +11,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
+class ASword;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -75,5 +76,18 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<ASword> SwordClass;
+
+	UPROPERTY()
+	ASword* Sword;
+	UPROPERTY(EditDefaultsOnly)
+	float MaxHealth = 100;
+	UPROPERTY(VisibleAnywhere)
+	float Health;
+
+	UFUNCTION(BlueprintCallable)
+	bool IsTakeSword();
 };
 

@@ -10,11 +10,13 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Sword.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
 // ASoulLikeCharacter
+class ASword;
 
 ASoulLikeCharacter::ASoulLikeCharacter()
 {
@@ -48,7 +50,7 @@ ASoulLikeCharacter::ASoulLikeCharacter()
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
@@ -71,9 +73,24 @@ void ASoulLikeCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+	Health = MaxHealth; //체력 설정
+
+	Sword = GetWorld()->SpawnActor<ASword>(SwordClass);
+	if (Sword != nullptr && GetMesh() != nullptr)
+    {
+        GetMesh()->HideBoneByName(TEXT("weapon_r"), EPhysBodyOp::PBO_None);
+        Sword->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("WeaponSocket"));
+		Sword->IsSwordTaken(); //칼이 스폰되면 트루값 반환
+		
+    }
+	else
+	{	
+		// Sword 변수가 널 포인터이거나 GetMesh() 함수가 널 포인터를 반환한 경우에 대한 처리
+		UE_LOG(LogTemp, Error, TEXT("Failed to spawn Sword or GetMesh is null"));
+		UE_LOG(LogTemp, Warning, TEXT("SwordClass: %s"), *SwordClass ? *SwordClass->GetName() : TEXT("nullptr"));
+	}
 }
 
-//////////////////////////////////////////////////////////////////////////
 // Input
 
 void ASoulLikeCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -141,8 +158,19 @@ void ASoulLikeCharacter::Run(const FInputActionValue& Value)
 {
 	bool bIsPressed = Value.Get<bool>();
 	
-	float Speed = bIsPressed ? 1000.f : 500.f;
+	float Speed = bIsPressed ? 900.f : 600.f;
    	GetCharacterMovement()->MaxWalkSpeed = Speed; //속도 두배로
 	UE_LOG(LogTemp, Warning, TEXT("Run pressed: %d, Speed: %f"), bIsPressed, Speed);
 
+}
+
+bool ASoulLikeCharacter::IsTakeSword()
+{
+	Sword = GetWorld()->SpawnActor<ASword>(SwordClass);
+	if (Sword != nullptr)
+    {
+		return Sword->IsSwordTaken(); //칼이 스폰되면 트루값 반환		
+    }
+    // Sword가 생성되지 않거나 반환값이 없는 경우 false 반환
+    return false;	
 }
